@@ -11,7 +11,7 @@ import { sendOtpMail } from "../emailVerify/sendOtpMail.js";
 export const registerUser = async (req, res) => {
     try {
 
-        const { username, email, password } = req.body;
+        const { username, email, password, role } = req.body;
         if (!username || !email || !password) {
             return res.status(400).send({
                 success: false,
@@ -29,10 +29,18 @@ export const registerUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
+        
+        // Map frontend role format to database enum
+        let dbRole = "Both";
+        if (role === "Need Help") dbRole = "Requester";
+        if (role === "Can Help") dbRole = "Helper";
+        if (role === "Both" || role === "Requester" || role === "Helper") dbRole = role;
+
         const newUser = await User.create({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            role: dbRole
         })
 
 
@@ -426,18 +434,32 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
     try {
         const userId = req.userId;
-        const { username } = req.body;
+        const { username, location, skills, interests } = req.body;
 
-        if (!username) {
+        const updateData = {};
+        if (username) updateData.username = username;
+        if (location !== undefined) updateData.location = location;
+        if (skills !== undefined) {
+            updateData.skills = typeof skills === "string" 
+                ? skills.split(",").map(s => s.trim()).filter(s => s)
+                : skills;
+        }
+        if (interests !== undefined) {
+            updateData.interests = typeof interests === "string"
+                ? interests.split(",").map(i => i.trim()).filter(i => i)
+                : interests;
+        }
+
+        if (Object.keys(updateData).length === 0) {
             return res.status(400).send({
                 success: false,
-                message: "Username is required"
+                message: "At least one field is required to update"
             });
         }
 
         const user = await User.findByIdAndUpdate(
             userId,
-            { username },
+            updateData,
             { new: true, runValidators: true }
         ).select("-password -token -otp -otpExpiry");
 

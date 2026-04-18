@@ -33,6 +33,36 @@ const userSchema = new mongoose.Schema({
     otpExpiry: {
         type: Date,
         required: null
+    },
+    // Profile fields
+    location: {
+        type: String,
+        default: ""
+    },
+    skills: {
+        type: [String],
+        default: []
+    },
+    interests: {
+        type: [String],
+        default: []
+    },
+    badges: {
+        type: [String],
+        default: []
+    },
+    trustScore: {
+        type: Number,
+        default: 100
+    },
+    contributions: {
+        type: Number,
+        default: 0
+    },
+    role: {
+        type: String,
+        enum: ["Helper", "Requester", "Both"],
+        default: "Both"
     }
 },{ timestamps: true});
 

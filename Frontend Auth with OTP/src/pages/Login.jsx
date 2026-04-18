@@ -39,7 +39,13 @@ const Login = () => {
         localStorage.setItem("accessToken", res.data.accessToken);
         setUser(res.data.user);
         toast.success("Login Successful 🎉");
-        navigate("/");
+        
+        // If user hasn't set up skills/location, push to onboarding
+        if (!res.data.user.skills || res.data.user.skills.length === 0 || !res.data.user.location) {
+            navigate("/onboarding");
+        } else {
+            navigate("/");
+        }
       } else {
         toast.error(res.data.message || "Login failed");
       }

@@ -18,6 +18,7 @@ import AiCenter from './pages/AiCenter'
 import Notifications from './pages/Notifications'
 import Explore from './pages/Explore'
 import RequestDetail from './pages/RequestDetail'
+import Onboarding from './pages/Onboarding'
 
 const router = createBrowserRouter([
   {
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
   {
     path: "/explore",
     element: <ProtectedRoute><Explore /></ProtectedRoute>
+  },
+  {
+    path: "/onboarding",
+    element: <ProtectedRoute><Onboarding /></ProtectedRoute>
   },
   {
     path: "/request/:id",

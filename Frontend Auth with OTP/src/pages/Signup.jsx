@@ -30,13 +30,15 @@ const Signup = () => {
       const res = await axios.post("http://localhost:8000/user/register", {
         username: formData.username,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        role: formData.role
       }, {
         headers: { "Content-Type": "application/json" }
       });
       if (res.data.success) {
-        toast.success("Signup Successful 🎉");
-        navigate("/verify");
+        toast.success(res.data.message);
+        localStorage.setItem("email", res.data.email);
+        navigate(`/verify-otp/${res.data.email}`);
       } else {
         toast.error(res.data.message || "Signup failed");
       }

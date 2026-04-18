@@ -1,76 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
   Filter, 
   MapPin,
-  Clock,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const MainContent = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [requests, setRequests] = useState([]);
+  const [stats, setStats] = useState({ members: 0, requests: 0, solved: 0 });
+  const [loading, setLoading] = useState(true);
 
-  // Sample data inspired by the Landing mockup
-  const requests = [
-    {
-      id: 1,
-      title: "Need help making my portfolio responsive before demo day",
-      description: "My HTML/CSS portfolio breaks on tablets and I need layout guidance before tomorrow evening.",
-      tags: ["HTML/CSS", "Responsive", "Portfolio"],
-      category: "Web Development",
-      urgency: "High",
-      status: "Solved",
-      author: "Sara Noor",
-      location: "Karachi",
-      helpers: 1
-    },
-    {
-      id: 2,
-      title: "Looking for Figma feedback on a volunteer event poster",
-      description: "I have a draft poster for a campus community event and want sharper hierarchy, spacing, and CTA copy.",
-      tags: ["Figma", "Poster", "Design Review"],
-      category: "Design",
-      urgency: "Medium",
-      status: "Open",
-      author: "Ayesha Khan",
-      location: "Lahore",
-      helpers: 2
-    },
-    {
-      id: 3,
-      title: "JavaScript quiz app debugging",
-      description: "Need help with some closure issues in my latest React project logic.",
-      tags: ["JavaScript", "React", "Debugging"],
-      category: "Web Development",
-      urgency: "High",
-      status: "Open",
-      author: "Ali Ahmed",
-      location: "Karachi",
-      helpers: 0
-    },
-    {
-      id: 4,
-      title: "Database optimization for learning portal",
-      description: "Queries are running slow on large datasets. Looking for indexing advice.",
-      tags: ["SQL", "Backend", "Performance"],
-      category: "Web Development",
-      urgency: "Medium",
-      status: "Open",
-      author: "Zainab B.",
-      location: "Islamabad",
-      helpers: 3
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const [reqRes, statsRes] = await Promise.all([
+        axios.get("http://localhost:8000/api/requests", { headers }),
+        axios.get("http://localhost:8000/api/requests/stats", { headers })
+      ]);
+
+      if (reqRes.data.success) setRequests(reqRes.data.data);
+      if (statsRes.data.success) setStats(statsRes.data.data);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const filteredRequests = searchTerm
+    ? requests.filter(r => 
+        r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : requests;
+
+  const statCards = [
+    { label: 'MEMBERS', value: `${stats.members}+`, sub: 'Students, mentors, & helpers.' },
+    { label: 'REQUESTS', value: `${stats.requests}+`, sub: 'Support posts shared.' },
+    { label: 'SOLVED', value: `${stats.solved}+`, sub: 'Problems resolved through action.' },
   ];
 
-  // Quick stats
-  const stats = [
-    { label: 'MEMBERS', value: '384+', sub: 'Students, mentors, & helpers.' },
-    { label: 'REQUESTS', value: '72+', sub: 'Support posts shared.' },
-    { label: 'SOLVED', value: '69+', sub: 'Problems resolved through action.' },
-  ];
+  const getCategoryColor = (cat) => {
+    if (cat === "Design") return "bg-[#e8f0fe] text-[#1967d2]";
+    if (cat === "Career") return "bg-gray-100 text-gray-600";
+    return "bg-[#e4efed] text-[#1a8570]";
+  };
+
+  const getUrgencyColor = (urg) => {
+    if (urg === "High") return "bg-[#feeceb] text-[#d93025]";
+    if (urg === "Low") return "bg-[#e6f4ea] text-[#1e8e3e]";
+    return "bg-[#fef7e0] text-[#b06000]";
+  };
+
+  const getStatusColor = (status) => {
+    if (status === "Solved") return "bg-[#e6f4ea] text-[#1e8e3e]";
+    return "bg-white border border-gray-200 text-gray-500";
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F4F2EB] flex items-center justify-center">
+        <Loader2 className="animate-spin text-[#1a8570]" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F2EB] font-sans">
@@ -97,7 +103,7 @@ const MainContent = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
-          {stats.map((stat, index) => (
+          {statCards.map((stat, index) => (
             <div key={index} className="bg-[#FAF9F5] rounded-[24px] p-6 border border-[#ebe9e1] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
               <p className="text-[10px] font-bold text-[#1a8570] tracking-[0.15em] mb-2 uppercase">{stat.label}</p>
               <p className="text-3xl font-extrabold text-[#111] mb-1">{stat.value}</p>
@@ -106,7 +112,7 @@ const MainContent = () => {
           ))}
         </div>
 
-        {/* Search and Filters */}
+        {/* Search */}
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
           <div className="flex-1 relative w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -124,28 +130,22 @@ const MainContent = () => {
           </button>
         </div>
 
-        {/* Community Feed / Request Grid */}
+        {/* Request Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6">
-          {requests.map((req) => (
+          {filteredRequests.map((req) => (
             <div
-              key={req.id}
+              key={req._id}
               className="bg-[#FAF9F5] border border-[#ebe9e1] rounded-[32px] p-6 flex flex-col shadow-sm hover:shadow-md transition-all group"
             >
               {/* Badges */}
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                    req.category === "Design" ? "bg-[#e8f0fe] text-[#1967d2]" : "bg-[#e4efed] text-[#1a8570]"
-                }`}>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${getCategoryColor(req.category)}`}>
                     {req.category}
                 </span>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                    req.urgency === "High" ? "bg-[#feeceb] text-[#d93025]" : "bg-[#fef7e0] text-[#b06000]"
-                }`}>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${getUrgencyColor(req.urgency)}`}>
                     {req.urgency}
                 </span>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                    req.status === "Solved" ? "bg-[#e6f4ea] text-[#1e8e3e]" : "bg-white border border-gray-200 text-gray-500"
-                }`}>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${getStatusColor(req.status)}`}>
                     {req.status}
                 </span>
               </div>
@@ -158,9 +158,9 @@ const MainContent = () => {
                 {req.description}
               </p>
               
-              {/* Internal Tags */}
+              {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-6">
-                {req.tags.map((tag, idx) => (
+                {(req.tags || []).map((tag, idx) => (
                   <span key={idx} className="bg-[#EBEEEB] text-gray-600 text-[10px] font-semibold px-2.5 py-1 rounded-full">
                     {tag}
                   </span>
@@ -170,13 +170,16 @@ const MainContent = () => {
               {/* Footer */}
               <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="font-bold text-[13px] text-[#111]">{req.author}</span>
+                  <span className="font-bold text-[13px] text-[#111]">{req.author?.username || "Unknown"}</span>
                   <div className="flex items-center gap-1 text-[11px] text-gray-400">
                     <MapPin size={10} />
-                    <span>{req.location} • {req.helpers} helper interested</span>
+                    <span>{req.author?.location || "Remote"} • {req.helpers?.length || 0} helper interested</span>
                   </div>
                 </div>
-                <button className="bg-white hover:bg-gray-50 text-gray-800 px-5 py-2.5 rounded-full text-[12px] font-bold shadow-sm border border-gray-100 transition-all flex items-center gap-2">
+                <button 
+                  onClick={() => navigate(`/request/${req._id}`)}
+                  className="bg-white hover:bg-gray-50 text-gray-800 px-5 py-2.5 rounded-full text-[12px] font-bold shadow-sm border border-gray-100 transition-all flex items-center gap-2"
+                >
                   Open details
                   <ArrowRight size={14} />
                 </button>
@@ -185,11 +188,10 @@ const MainContent = () => {
           ))}
         </div>
 
-        {/* Empty State Check (not needed for sample, but good practice) */}
-        {requests.length === 0 && (
+        {filteredRequests.length === 0 && (
           <div className="text-center py-20 bg-white/50 rounded-[32px] border border-dashed border-gray-300">
             <h3 className="text-xl font-bold text-gray-400">No requests found</h3>
-            <p className="text-gray-400 mt-1">Try adjusting your filters or search term.</p>
+            <p className="text-gray-400 mt-1">Try adjusting your search term.</p>
           </div>
         )}
       </div>
