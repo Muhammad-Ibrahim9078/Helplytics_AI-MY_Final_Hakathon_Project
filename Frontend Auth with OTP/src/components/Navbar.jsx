@@ -12,7 +12,6 @@ const Navbar = () => {
   const location = useLocation();
   const { user, setUser } = getData();
   const dropdownRef = useRef(null);
-  const accessToken = localStorage.getItem("accessToken");
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -26,21 +25,19 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      const res = await axios.post(
+      const token = localStorage.getItem("accessToken");
+      await axios.post(
         "http://localhost:8000/user/logout",
         {},
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.data.success) {
-        setUser(null);
-        localStorage.clear();
-        toast.success("Logged out successfully");
-        navigate("/login");
-      }
     } catch (error) {
-      // Force logout on error
+      console.error("Logout API failed:", error);
+    } finally {
+      // Always clear local state even if API fails
       setUser(null);
       localStorage.clear();
+      toast.success("Logged out successfully");
       navigate("/login");
     }
   };

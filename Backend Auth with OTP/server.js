@@ -45,7 +45,7 @@ app.use('/api/notifications', notificationRoute);
 app.use('/api/leaderboard', leaderboardRoute);
 app.use('/api/ai-center', aiCenterRoute);
 
-app.listen(PORT, ()=>{
+app.listen(PORT, () => {
     connectDB();
     console.log(`Server is Listening at port ${PORT}`);
 });

@@ -95,7 +95,7 @@ const RequestDetail = () => {
             <Navbar />
 
             <div className="relative z-10 w-full max-w-[1100px] mx-auto px-6 flex-1 flex flex-col pb-12">
-                
+
                 {/* Hero */}
                 <div className="w-full bg-[#162722] rounded-[32px] p-8 md:p-12 mb-6 text-white shadow-xl flex flex-col justify-center">
                     <div className="flex gap-2 mb-4">
@@ -109,7 +109,7 @@ const RequestDetail = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
+
                     {/* Left */}
                     <div className="lg:col-span-7 flex flex-col gap-6">
                         {/* AI Summary */}
@@ -157,7 +157,7 @@ const RequestDetail = () => {
                                     </div>
                                 </div>
                                 {currentUser && request.author?._id !== currentUser._id && (
-                                    <button onClick={() => navigate('/messages', { state: { recipient: request.author?.username } })} 
+                                    <button onClick={() => navigate('/messages', { state: { recipient: request.author?.username } })}
                                         className="text-[11px] font-bold bg-[#1a8570]/10 text-[#1a8570] px-4 py-2 rounded-full hover:bg-[#1a8570]/20 transition-colors shadow-sm">
                                         Message
                                     </button>
@@ -169,7 +169,7 @@ const RequestDetail = () => {
                         <div className="bg-[#FAF9F5] rounded-[32px] p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#ebe9e1] flex flex-col">
                             <span className="text-[#1a8570] text-[11px] font-bold tracking-[0.15em] uppercase mb-4 block">HELPERS</span>
                             <h2 className="text-[20px] font-bold text-[#111] mb-6 tracking-tight">People ready to support</h2>
-                            
+
                             {request.helpers && request.helpers.length > 0 ? (
                                 <div className="flex flex-col gap-4">
                                     {request.helpers.map((helper) => (
@@ -188,7 +188,7 @@ const RequestDetail = () => {
                                                     <span className="text-[#1a8570] text-[10px] font-bold whitespace-nowrap">Trust {helper.trustScore || 0}%</span>
                                                 </div>
                                                 {currentUser && helper._id !== currentUser._id && (
-                                                    <button onClick={() => navigate('/messages', { state: { recipient: helper.username } })} 
+                                                    <button onClick={() => navigate('/messages', { state: { recipient: helper.username } })}
                                                         className="text-[10px] font-bold bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-black transition-colors shadow-sm">
                                                         Chat
                                                     </button>

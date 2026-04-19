@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { getData } from '../context/UserContext';
+import { io } from 'socket.io-client';
 
 const Messages = () => {
     const location = useLocation();
@@ -19,21 +20,67 @@ const Messages = () => {
     const [messageInput, setMessageInput] = useState('');
     const [sending, setSending] = useState(false);
 
+    const [socket, setSocket] = useState(null);
+
     const messagesEndRef = useRef(null);
+    const selectedPartnerRef = useRef(selectedPartner);
+
+    useEffect(() => {
+        selectedPartnerRef.current = selectedPartner;
+    }, [selectedPartner]);
 
     useEffect(() => {
         fetchConversations();
     }, []);
 
+    useEffect(() => {
+        if (!currentUser) return;
+        const newSocket = io("http://localhost:8000", {
+            query: { userId: currentUser._id || currentUser.id }
+        });
+
+        newSocket.on("connect", () => {
+            console.log("[Socket] Connected to server successfully");
+        });
+
+        newSocket.on("newMessage", (message) => {
+            console.log("[Socket] Received real-time message:", message);
+            
+            const fromId = message.from._id || message.from;
+            const isForActiveChat = selectedPartnerRef.current && (
+                (selectedPartnerRef.current._id && selectedPartnerRef.current._id.toString() === fromId.toString()) ||
+                (selectedPartnerRef.current.username === message.from.username)
+            );
+
+            if (isForActiveChat) {
+                setChatHistory(prev => [...prev, message]);
+            } else {
+                toast.info(`New message from ${message.from.username || "Community Member"}`);
+            }
+            
+            fetchConversations();
+        });
+
+        setSocket(newSocket);
+        return () => newSocket.close();
+    }, [currentUser]);
+
+    // Also fetch conversations when currentUser is ready to ensure IDs match
+    useEffect(() => {
+        if (currentUser) {
+            fetchConversations();
+        }
+    }, [currentUser]);
+
     const getPartnerForMsg = (msg) => {
         if (msg.partner && msg.partner.username) return msg.partner;
-        
+
         const myId = currentUser?._id || currentUser?.id;
         const myUsername = currentUser?.username;
-        
+
         const fromObj = msg.from;
         const toObj = msg.to;
-        
+
         // Ensure we are working with populated objects
         if (!fromObj || !toObj) return { username: "Unknown" };
 
@@ -65,12 +112,12 @@ const Messages = () => {
             if (res.data.success) {
                 // Remove local fallback map, handle directly via helper function.
                 setConversations(res.data.data);
-                
+
                 // If location state exists and we haven't selected a partner yet
                 if (location.state?.recipient && !selectedPartner) {
                     const targetRecipient = location.state.recipient;
                     let foundPartnerObj = null;
-                    
+
                     for (const c of res.data.data) {
                         const p = getPartnerForMsg(c);
                         if (p && p.username === targetRecipient) {
@@ -96,9 +143,9 @@ const Messages = () => {
     const handleSelectConversation = async (partner) => {
         setSelectedPartner(partner);
         setChatHistory([]);
-        
+
         if (partner._isNew) return; // Ignore fetching history for mock partners
-        
+
         setHistoryLoading(true);
         try {
             const token = localStorage.getItem("accessToken");
@@ -123,7 +170,7 @@ const Messages = () => {
         setSending(true);
         try {
             const token = localStorage.getItem("accessToken");
-            const res = await axios.post("http://localhost:8000/api/messages", 
+            const res = await axios.post("http://localhost:8000/api/messages",
                 { to: selectedPartner._id || selectedPartner.username, content: messageInput },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -165,7 +212,7 @@ const Messages = () => {
 
             <div className="relative z-10 w-full max-w-[1200px] mx-auto px-6 flex-1 flex flex-col pb-12">
                 <div className="flex flex-col lg:flex-row gap-6 h-[80vh]">
-                    
+
                     {/* Left: Conversations Sidebar */}
                     <div className="w-full lg:w-[380px] bg-[#FAF9F5] rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#ebe9e1] flex flex-col h-full">
                         <span className="text-[#1a8570] text-[11px] font-bold tracking-[0.15em] uppercase mb-4 block pl-2">MESSAGES</span>
@@ -182,7 +229,7 @@ const Messages = () => {
                                 conversations.map((msg) => {
                                     const resolvedPartner = getPartnerForMsg(msg);
                                     return (
-                                        <div key={msg.id || msg._id} 
+                                        <div key={msg.id || msg._id}
                                             onClick={() => handleSelectConversation(resolvedPartner)}
                                             className={`rounded-[20px] p-4 flex gap-3 transition-all cursor-pointer border ${selectedPartner?.username === resolvedPartner?.username ? 'bg-white border-[#1a8570] shadow-sm' : 'bg-transparent border-transparent hover:bg-white hover:shadow-sm'}`}>
                                             <div className="w-12 h-12 bg-orange-500 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-xs mt-0.5">
@@ -271,7 +318,7 @@ const Messages = () => {
                                 <div className="p-6 bg-white border-t border-gray-100 shrink-0">
                                     <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
                                         <div className="flex-1 bg-[#FAF9F5] border border-[#ebe9e1] rounded-2xl relative transition-all focus-within:border-[#1a8570] focus-within:bg-white focus-within:shadow-sm">
-                                            <textarea 
+                                            <textarea
                                                 value={messageInput}
                                                 onChange={(e) => setMessageInput(e.target.value)}
                                                 onKeyDown={(e) => {
@@ -286,8 +333,8 @@ const Messages = () => {
                                                 style={{ height: 'auto' }}
                                             />
                                         </div>
-                                        <button 
-                                            type="submit" 
+                                        <button
+                                            type="submit"
                                             disabled={sending || !messageInput.trim()}
                                             className="w-14 h-[56px] bg-[#1a8570] hover:bg-[#156d5b] text-white rounded-2xl flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-sm"
                                         >

@@ -80,6 +80,9 @@ export const getConversations = async (req, res) => {
         // Group by conversation partner, take latest message
         const conversationMap = new Map();
         for (const msg of messages) {
+            // Safety check: skip orphaned messages where users are deleted
+            if (!msg.from || !msg.to) continue;
+
             const isFromMe = msg.from._id.toString() === userId.toString();
             const partnerId = isFromMe ? msg.to._id.toString() : msg.from._id.toString();
             const partnerObj = isFromMe ? msg.to : msg.from;
@@ -89,7 +92,7 @@ export const getConversations = async (req, res) => {
                     id: msg._id,
                     from: msg.from,
                     to: msg.to,
-                    partner: partnerObj,
+                    partner: partnerObj || { username: "Chat Partner", _id: partnerId },
                     preview: msg.content,
                     time: msg.createdAt,
                     read: msg.read

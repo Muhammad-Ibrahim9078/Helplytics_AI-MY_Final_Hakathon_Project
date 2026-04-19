@@ -39,7 +39,7 @@ Respond in JSON format: {"summary": "...", "tags": ["tag1", "tag2", "tag3"]}`;
             const result = await geminiModel.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
-            
+
             // Try to parse JSON from the response
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
@@ -110,7 +110,7 @@ export const getAllRequests = async (req, res) => {
             const skillsArr = skills.split(",").map(s => s.trim().toLowerCase());
             filter.tags = { $in: skillsArr.map(s => new RegExp(s, "i")) };
         }
-        
+
         if (search) {
             filter.$or = [
                 { title: { $regex: search, $options: "i" } },
@@ -309,7 +309,7 @@ export const markAsSolved = async (req, res) => {
 export const getAISuggestions = async (req, res) => {
     try {
         const { title, description, skills, interests } = req.body;
-        
+
         // If skills/interests are provided, it's for the Onboarding Page
         if (skills || interests) {
             const prompt = `You are an AI for a community support platform. A new user is onboarding.

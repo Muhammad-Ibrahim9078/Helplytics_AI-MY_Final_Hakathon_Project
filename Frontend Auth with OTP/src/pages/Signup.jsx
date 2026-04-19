@@ -38,7 +38,7 @@ const Signup = () => {
       if (res.data.success) {
         toast.success(res.data.message);
         localStorage.setItem("email", res.data.email);
-        navigate(`/verify-otp/${res.data.email}`);
+        navigate("/verify");
       } else {
         toast.error(res.data.message || "Signup failed");
       }
